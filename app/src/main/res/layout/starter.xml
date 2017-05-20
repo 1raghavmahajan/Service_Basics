@@ -1,0 +1,12 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000"
+    android:padding="@dimen/widget_margin">
+    <Button
+        android:id="@+id/btn_widget"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:text="Start" />
+
+</RelativeLayout>
