@@ -13,49 +13,67 @@ import android.util.Log;
 import android.widget.Toast;
 
 /**
- * An {@link IntentService} subclass for handling asynchronous task requests in
+ * An IntentService is used for handling asynchronous task requests in
  * a service on a separate handler thread.
- * <p>
- * TODO: Customize class - update intent actions, extra parameters and static
- * helper methods.
+ *
+ * Kills itself after use.
+ *
+ * 2 tasks can be performed:
+ * 1) Delay function using ACTION_TIMER
+ * 2) Broadcast Receiver using ACTION_BR
+ *
+ * but Broadcast Receiver registered using an intent service can't serve well
+ * as we won't be able to unregister the receiver
+ * and it will lead to a leak.
+ *
+ * This will cause the receiver to receive the intent only once.
+ *
  */
+
+
 public class MyIntentService extends IntentService {
 
-    private static final String ACTION_FOO = "com.blackbox.app.basics.action.TIMER";
-    private static final String ACTION_BAZ = "com.blackbox.app.basics.action.WAIT";
-    private static final String ACTION_STOP = "com.blackbox.app.basics.action.STOP";
+    static final String ACTION_TIMER = "com.blackbox.app.basics.action.TIMER";
+    static final String ACTION_BR = "com.blackbox.app.basics.action.BR";
+    static final String EXTRA_PARAM1 = "com.blackbox.app.basics.extra.TIME";
 
-    private static final String EXTRA_PARAM1 = "com.blackbox.app.basics.extra.TIME";
+    private static final String TAG = MyIntentService.class.getSimpleName();
 
     public MyIntentService() {
         super("MyIntentService");
     }
 
+
     @Override
     protected void onHandleIntent(Intent intent) {
-        Log.i("YOYO", "onHandleIntent  " + Thread.currentThread().getName());
+
+        Log.i(TAG, "onHandleIntent  " + Thread.currentThread().getName());
+
         if (intent != null) {
+
             final String action = intent.getAction();
-            if (ACTION_FOO.equals(action)) {
-                final Integer t = intent.getIntExtra(EXTRA_PARAM1, 0);
-                handleActionFoo(t, intent);
-            }
-            else if(ACTION_BAZ.equals(intent.getAction()))
-            {
-                Log.i("YOYO", "ACTION_BAZ  " + Thread.currentThread().getName());
-                IntentFilter intentFilter = new IntentFilter("android.net.conn.CONNECTIVITY_CHANGE");
-                MyBroadcastReceiver2 br = new MyBroadcastReceiver2();
-                registerReceiver(br,intentFilter);
-            }
-            else if(ACTION_STOP.equals(intent.getAction()))
-            {
-                Log.i("YOYO", "ACTION_STOP  " + Thread.currentThread().getName());
+
+
+            switch (action) {
+                case ACTION_TIMER:
+                    final Integer t = intent.getIntExtra(EXTRA_PARAM1, 0);
+                    handleActionTimer(t, intent);
+                    break;
+                case ACTION_BR:
+                    Log.i(TAG, "ACTION_BR  " + Thread.currentThread().getName());
+                    IntentFilter intentFilter = new IntentFilter(Intent.ACTION_BATTERY_LOW);
+                    OtherBroadcastReceiver br = new OtherBroadcastReceiver();
+                    registerReceiver(br, intentFilter);
+                    break;
             }
         }
     }
 
-    private void handleActionFoo(Integer t, Intent intent) {
-        Log.i("YOYO", "handleActionFoo  " + Thread.currentThread().getName());
+    private void handleActionTimer(Integer t, Intent intent) {
+
+        Log.i(TAG, "handleActionTimer:  " + Thread.currentThread().getName());
+
+        //Simulates a long running operation.
         int i=0;
         while (i<t) {
             try {
@@ -64,28 +82,24 @@ public class MyIntentService extends IntentService {
                 e.printStackTrace();
             }
             i++;
-            Log.i("YOYO", String.valueOf(i));
+            Log.i(TAG, "i= " + String.valueOf(i));
         }
+
         Bundle b = new Bundle();
         b.putInt("final_counter", i);
+        //extract Result Receiver from Intent extra
         ResultReceiver rr = intent.getParcelableExtra("receiver");
+        //Used to send the result.
         rr.send(69, b);
     }
 
-    class MyBroadcastReceiver2 extends BroadcastReceiver{
+    class OtherBroadcastReceiver extends BroadcastReceiver{
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            Log.i("YOYO", "receved " + Thread.currentThread().getName());
-            Bundle extras = intent.getExtras();
-            extras.get(ConnectivityManager.EXTRA_NETWORK_TYPE);
 
-            ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(context.CONNECTIVITY_SERVICE);
-
-
-            NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
-            Log.i("YOYO", "recever " + networkInfo.toString());
-
+            Log.i(TAG, "Received " + Thread.currentThread().getName());
         }
     }
+
 }

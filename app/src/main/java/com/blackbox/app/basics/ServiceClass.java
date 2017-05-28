@@ -4,31 +4,35 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.IBinder;
-import android.support.annotation.IntDef;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.widget.Toast;
 
 /**
- * Created by Raghav on 15-May-17.
+ * Difference between a Service class an Intent Service is that
+ * ServiceClass runs on the main UI thread, thus we can't perform long running operations as it is
+ * We use ASync Class to do that.
+ *
  */
 
 public class ServiceClass extends Service {
 
+    private static final String TAG = ServiceClass.class.getSimpleName();
 
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.i("yoyo","onCreate");
+        Log.i(TAG,"onCreate");
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 
-        //@IntDef(value = {Service.START_FLAG_REDELIVERY, Service.START_FLAG_RETRY}, flag = true)
-        Log.i("yoyo","onStartCommand " + intent.getStringExtra("string"));
+        Log.i(TAG,"onStartCommand");
 
-        new AsyncClass().execute(20);
+        int timerDuration = intent.getIntExtra("timerValue", 0);
+        if(timerDuration>0)
+            new AsyncClass().execute(timerDuration);
 
         return super.onStartCommand(intent, flags, startId);
     }
@@ -36,18 +40,18 @@ public class ServiceClass extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Log.i("yoyo","onDestroy");
+        Log.i(TAG,"onDestroy");
     }
 
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-        Log.i("yoyo","onBind");
+        Log.i(TAG,"onBind");
         return null;
     }
 
 
-    class AsyncClass extends AsyncTask<Integer, Integer, Void>
+    private class AsyncClass extends AsyncTask<Integer, Integer, Void>
     {
 
         @Override
@@ -63,7 +67,7 @@ public class ServiceClass extends Service {
         @Override
         protected void onProgressUpdate(Integer... values) {
             super.onProgressUpdate(values);
-            Toast.makeText(ServiceClass.this, "now " + values[0], Toast.LENGTH_SHORT).show();
+            Toast.makeText(ServiceClass.this, "Now " + values[0], Toast.LENGTH_SHORT).show();
         }
 
         @Override
